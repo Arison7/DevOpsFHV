@@ -1,20 +1,25 @@
 # Stage 1: Build
-FROM eclipse-temurin:17 AS build
+FROM gradle:8.3-jdk17 AS build
+WORKDIR /app
 
-WORKDIR /
+# Copy Gradle files first to cache dependencies
+COPY build.gradle settings.gradle gradle* ./
+RUN gradle build -x test --no-daemon || true
 
-COPY gradlew ./
-COPY gradle ./gradle
-COPY build.gradle.kts settings.gradle.kts ./
-RUN chmod +x ./gradlew
-RUN ./gradlew dependencies --no-daemon || true
-COPY . .
-RUN ./gradlew bootJar --no-daemon
+# Copy source code
+COPY src ./src
 
-# Stage 2: Runtime
-FROM eclipse-temurin:17-jre
+# Build the bootJar
+RUN gradle bootJar --no-daemon
 
-WORKDIR /
-COPY --from=build /build/libs/*.jar app.jar
+# Stage 2: Runtime image
+FROM eclipse-temurin:17-jdk
+WORKDIR /app
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Copy bootJar from build stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Expose port
+EXPOSE 8080
+
+ENTRYPOINT ["java","-jar","app.jar"]
