@@ -1,36 +1,31 @@
-# This is a basic workflow to help you get started with Actions
+name: Build JAR with Docker
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: self-hosted  # your Ubuntu server
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checkout your repo
       - uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Docker build app
+      # Build the Docker image
+      - name: Docker build
         run: docker build -t fhvdevops .
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      # Create a container from the image, copy the JAR to host
+      - name: Extract JAR from Docker image
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          CONTAINER_ID=$(docker create fhvdevops)
+          docker cp $CONTAINER_ID:/build/libs/$(ls build/libs/ | head -n1) ./app.jar
+          docker rm $CONTAINER_ID
+
+      # List the JAR on the host
+      - name: Verify JAR
+        run: ls -l app.jar
