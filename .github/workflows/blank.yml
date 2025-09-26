@@ -17,7 +17,15 @@ jobs:
 
       # Build the Docker image
       - name: Docker build
-        run: docker build -t fhvdevops .
+        run: |
+          # Get current UID and GID
+          UID=$(id -u)
+          GID=$(id -g)
+
+          # Run the container with host user IDs
+          docker run --rm \
+            --user $UID:$GID \
+            fhvdevops
 
       # Create a container from the image, copy the JAR to host
       - name: Extract JAR from Docker image
