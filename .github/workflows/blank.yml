@@ -30,4 +30,4 @@ jobs:
         run: ./gradlew bootJar --no-daemon
 
       - name: Build Docker image
-        run: docker build -t fhvdevops:latest .
+        run: docker build -t fhvdevops:latest -f Dockerfile-build .
