@@ -3,7 +3,7 @@ FROM gradle:8.3-jdk17 AS build
 WORKDIR /app
 
 # Copy Gradle files first to cache dependencies
-COPY build.gradle settings.gradle gradle* ./
+COPY build.gradle.kts settings.gradle.kts gradle* ./
 RUN gradle build -x test --no-daemon || true
 
 # Copy source code
