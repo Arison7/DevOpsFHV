@@ -43,7 +43,7 @@ jobs:
 
       - name: Run new container
         run: |
-          docker run -d \
+          docker run -d \ 
             --name fhvdevops \
             --restart unless-stopped \ 
             -p 8080:8080 \
