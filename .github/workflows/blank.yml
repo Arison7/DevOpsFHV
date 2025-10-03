@@ -43,9 +43,9 @@ jobs:
 
       - name: Run new container
         run: |
-          docker run -d \ 
+          docker run -d \
             --name fhvdevops \
-            --restart unless-stopped \ 
+            --restart unless-stopped \
             -p 8080:8080 \
             --network bridge \
             fhvdevops:latest
