@@ -61,7 +61,7 @@ jobs:
       - name: Test API endpoint
         run: |
           echo "Checking API endpoint..."
-          response=$(curl -s http://10.0.40.192:8080/test)
+          response=$(curl -s -o /dev/null -w "%{http_code} http://10.0.40.192:8080/test)
           if [ "$response" -eq 200 ]; then
             echo "API returned success"
           else
