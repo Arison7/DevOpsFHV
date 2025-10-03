@@ -1,11 +1,11 @@
-name: Build Spring Boot BootJar 
+name: Build Spring Boot BootJar
 
 on:
   push:
     branches: [master]
 
 jobs:
-  build:
+  start:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -32,20 +32,25 @@ jobs:
       - name: Build Docker image
         run: docker build -t fhvdevops:latest -f Dockerfile-build .
 
-        
+  stop:
+    runs-on: self-hosted
+    needs: start
+    steps:
       - name: Stop old container
-        run: |
-          docker stop fhvdevops || true
+        run: docker stop fhvdevops || true
 
       - name: Remove old container
-        run: |
-          docker rm fhvdevops || true
+        run: docker rm fhvdevops || true
 
+  cleanup:
+    runs-on: self-hosted
+    needs: stop
+    steps:
       - name: Run new container
         run: |
-          docker run -d \ 
+          docker run -d \
             --name fhvdevops \
-            --restart unless-stopped \ 
+            --restart unless-stopped \
             -p 8080:8080 \
             --network bridge \
             fhvdevops:latest
