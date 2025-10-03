@@ -31,3 +31,19 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t fhvdevops:latest -f Dockerfile-build .
+
+        
+      - name: Stop old container
+        run: |
+          docker stop fhvdevops || true
+
+      - name: Remove old container
+        run: |
+          docker rm fhvdevops || true
+
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name fhvdevops \
+            -p 8080:8080 \
+            fhvdevops:latest
