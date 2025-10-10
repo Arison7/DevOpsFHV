@@ -3,6 +3,8 @@
 	java
 	id("org.springframework.boot") version "3.5.5"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("jacoco")
+	application
 }
 
 group = "be.kdg.integration4"
@@ -35,4 +37,19 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)
+}
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+	reports {
+        xml.required = true
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+    reportsDirectory = layout.buildDirectory.dir("reports/jacoco")
 }
