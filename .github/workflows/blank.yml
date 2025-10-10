@@ -23,7 +23,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
           
       - name: Build, test, and generate coverage
-        run: ./gradlew clean test jacocoTestReport --no-daemon
+        run: ./gradlew build clean test jacocoTestReport --no-daemon
 
       - name: Run SonarQube analysis
         env:
