@@ -49,7 +49,7 @@ jobs:
           docker run --rm \
             -u 0 \
             -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
-            -e SONAR_LOGIN="${SONAR_TOKEN}" \
+            -e SONAR_TOKEN="${SONAR_TOKEN}" \
             -v "${{ github.workspace }}":/usr/src \
             sonarsource/sonar-scanner-cli \
             -Dsonar.projectBaseDir=/usr/src \
