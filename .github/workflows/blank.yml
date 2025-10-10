@@ -31,6 +31,9 @@ jobs:
       - name: List JaCoCo test report folder
         run: ls -l build/reports/jacoco/test
 
+      - name: show working directory
+        run: pwd
+
         
       - name: Run SonarQube analysis
         env:
