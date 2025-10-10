@@ -27,6 +27,10 @@ jobs:
 
       - name: Build and test
         run: ./gradlew build jacocoTestReport --no-daemon
+
+      - name: List JaCoCo test report folder
+        run: ls -l build/reports/jacoco/test
+
         
       - name: Run SonarQube analysis
         env:
