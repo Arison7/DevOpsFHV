@@ -55,7 +55,7 @@ jobs:
             -Dsonar.projectBaseDir=/usr/src \
             -Dsonar.java.binaries=/usr/src/build/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=/usr/src/coverage-reports/jacoco/test/jacocoTestReport.xml
-
+            -Dsonar.projectKey="team12"
   start:
     runs-on: self-hosted
     needs: analyze
