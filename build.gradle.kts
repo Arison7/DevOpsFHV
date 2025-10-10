@@ -21,9 +21,7 @@ sonar {
         property("sonar.projectKey", "Team12")
         property("sonar.projectName", "Team12")
 		property("sonar.java.coveragePlugin", "jacoco")
-        property("sonar.junit.reportPaths", "build2/test-results/test")
-        property("sonar.jacoco.reportPaths", "coverage-reports/jacoco/test.exec") // legacy
-        property("sonar.coverage.jacoco.xmlReportPaths", "coverage-reports/jacoco/jacoco/test/jacocoTestReport.xml")
+        property("sonar.coverage.jacoco.xmlReportPaths", "coverage-reports/jacoco/test/jacocoTestReport.xml")
     }
 }
 
@@ -50,6 +48,8 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 	reports {
         xml.required = true
+		xml.outputLocation.set(layout.projectDirectory.file("coverage-reports/jacoco/test/jacocoTestReport.xml"))
+        html.outputLocation.set(layout.projectDirectory.dir("coverage-reports/jacoco/html"))
     }
 }
 
