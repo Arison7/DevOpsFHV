@@ -8,22 +8,13 @@ jobs:
   analyze:
     name: Build and analyze
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available.
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+          distribution: zulu
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -38,28 +29,18 @@ jobs:
 
   start:
     runs-on: self-hosted
+    needs: analyze
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper/
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: gradle-
-
+          java-version: 17
+      - name: Grant execute permission
+        run: chmod +x gradlew
       - name: Build bootJar
         run: ./gradlew bootJar --no-daemon
-
       - name: Build Docker image
         run: docker build -t fhvdevops:latest -f Dockerfile-build .
 
@@ -67,48 +48,40 @@ jobs:
     runs-on: self-hosted
     needs: start
     steps:
-      - name: Stop old container
-        run: docker stop fhvdevops || true
-
-      - name: Remove old container
-        run: docker rm fhvdevops || true
+      - run: docker stop fhvdevops || true
+      - run: docker rm fhvdevops || true
 
   cleanup:
     runs-on: self-hosted
     needs: stop
     steps:
-      - name: Run new container
-        run: |
+      - run: |
           docker run -d \
             --name fhvdevops \
             --restart unless-stopped \
             -p 8080:8080 \
             --network bridge \
             fhvdevops:latest
+
   test:
     runs-on: self-hosted
     needs: cleanup
     steps:
-      - name: Test API endpoint
-        run: |  
+      - run: |
           echo 'Checking API endpoint...'
           response=$(curl -s -o /dev/null -w "%{http_code}" http://10.0.40.192:8080/test)
           if [ "$response" -eq 200 ]; then
             echo 'API returned success'
           else
-            echo 'API returned status $response'
+            echo "API returned status $response"
             exit 1
           fi
 
-  push:
+  publish:
     runs-on: self-hosted
     needs: test
     if: success()
     steps:
-      - name: Tag and push image to internal registry
-        run: |
-          # Tag with team name
+      - run: |
           docker tag fhvdevops:latest 10.0.40.193:5000/fhvdevops:team12
-          
-          # Push to registry
           docker push 10.0.40.193:5000/fhvdevops:team12
