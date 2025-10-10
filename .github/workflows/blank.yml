@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Reset workspace permissions
+        run: sudo chown -R $USER:$USER ${{ github.workspace }} || true
+
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -23,6 +26,7 @@ jobs:
           docker run --rm \
             -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
+            -v ~/.gradle/caches:/home/gradle/.gradle/caches \
             -w /home/gradle/project \
             gradle:jdk17 \
             ./gradlew clean --no-daemon
@@ -32,6 +36,7 @@ jobs:
           docker run --rm \
             -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
+            -v ~/.gradle/caches:/home/gradle/.gradle/caches \
             -w /home/gradle/project \
             gradle:jdk17 \
             ./gradlew build jacocoTestReport --no-daemon
@@ -43,7 +48,7 @@ jobs:
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
-            -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
+            -e SONAR_HOST_URL="https://${SONAR_HOST_URL}" \
             -e SONAR_LOGIN="${SONAR_TOKEN}" \
             -v "${{ github.workspace }}":/usr/src \
             sonarsource/sonar-scanner-cli \
@@ -62,6 +67,7 @@ jobs:
           docker run --rm \
             -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
+            -v ~/.gradle/caches:/home/gradle/.gradle/caches \
             -w /home/gradle/project \
             gradle:jdk17 \
             ./gradlew bootJar --no-daemon
