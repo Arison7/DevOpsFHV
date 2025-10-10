@@ -48,7 +48,7 @@ jobs:
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
-            -e SONAR_HOST_URL="https://${SONAR_HOST_URL}" \
+            -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
             -e SONAR_LOGIN="${SONAR_TOKEN}" \
             -v "${{ github.workspace }}":/usr/src \
             sonarsource/sonar-scanner-cli \
