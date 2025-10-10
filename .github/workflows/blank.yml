@@ -47,7 +47,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           docker run --rm \
-            -u $(id -u):$(id -g) \
+            -u 0 \
             -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
             -e SONAR_LOGIN="${SONAR_TOKEN}" \
             -v "${{ github.workspace }}":/usr/src \
