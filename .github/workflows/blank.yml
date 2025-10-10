@@ -47,15 +47,14 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           docker run --rm \
-            -u 0 \
-            -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
-            -e SONAR_TOKEN="${SONAR_TOKEN}" \
-            -v "${{ github.workspace }}":/usr/src \
-            sonarsource/sonar-scanner-cli \
-            -Dsonar.projectBaseDir=/usr/src \
-            -Dsonar.java.binaries=/usr/src/build/classes \
-            -Dsonar.coverage.jacoco.xmlReportPaths=/usr/src/coverage-reports/jacoco/test/jacocoTestReport.xml
-            -Dsonar.projectKey="team12"
+           -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
+           -e SONAR_TOKEN="${SONAR_TOKEN}" \
+           -v "${{ github.workspace }}":/usr/src \
+           sonarsource/sonar-scanner-cli \
+           -Dsonar.projectBaseDir=/usr/src \
+           -Dsonar.projectKey=Team12 \
+           -Dsonar.java.binaries=/usr/src/build/classes \
+           -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
   start:
     runs-on: self-hosted
     needs: analyze
