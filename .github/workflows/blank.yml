@@ -99,3 +99,16 @@ jobs:
             echo 'API returned status $response'
             exit 1
           fi
+
+  push:
+    runs-on: self-hosted
+    needs: test
+    if: success()
+    steps:
+      - name: Tag and push image to internal registry
+        run: |
+          # Tag with team name
+          docker tag fhvdevops:latest 10.0.40.193:5000/fhvdevops:team12
+          
+          # Push to registry
+          docker push 10.0.40.193:5000/fhvdevops:team12
