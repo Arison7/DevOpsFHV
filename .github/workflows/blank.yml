@@ -22,9 +22,12 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
           
-      - name: Build, test, and generate coverage
-        run: ./gradlew build clean test jacocoTestReport --no-daemon
+      - name: Clean project
+        run: ./gradlew clean --no-daemon
 
+      - name: Build and test
+        run: ./gradlew build jacocoTestReport --no-daemon
+        
       - name: Run SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
