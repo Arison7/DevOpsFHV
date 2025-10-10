@@ -27,13 +27,6 @@ jobs:
 
       - name: Build and test
         run: ./gradlew build jacocoTestReport --no-daemon
-
-      - name: List JaCoCo test report folder
-        run: ls -l build/reports/jacoco/test
-
-      - name: show working directory
-        run: pwd
-
         
       - name: Run SonarQube analysis
         env:
@@ -43,7 +36,7 @@ jobs:
           ./gradlew sonarqube \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.login=$SONAR_TOKEN \
-            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/coverage-reports/jacoco/test/jacocoTestReport.xml
 
   start:
     runs-on: self-hosted
