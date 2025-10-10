@@ -21,6 +21,7 @@ jobs:
       - name: Clean project (Gradle container)
         run: |
           docker run --rm \
+            -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
             -w /home/gradle/project \
             gradle:jdk17 \
@@ -29,6 +30,7 @@ jobs:
       - name: Build and test (Gradle container)
         run: |
           docker run --rm \
+            -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
             -w /home/gradle/project \
             gradle:jdk17 \
@@ -40,6 +42,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           docker run --rm \
+            -u $(id -u):$(id -g) \
             -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
             -e SONAR_LOGIN="${SONAR_TOKEN}" \
             -v "${{ github.workspace }}":/usr/src \
@@ -57,6 +60,7 @@ jobs:
       - name: Build bootJar (Gradle container)
         run: |
           docker run --rm \
+            -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
             -w /home/gradle/project \
             gradle:jdk17 \
