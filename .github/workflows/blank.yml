@@ -75,6 +75,16 @@ jobs:
       name: Run SonarQube analysis
       steps:
         - uses: actions/checkout@v4
+        - name: Run tests (with coverage)
+          run: |
+            docker run --rm \
+              -u $(id -u):$(id -g) \
+              -v "${{ github.workspace }}":/home/gradle/project \
+              -v ~/.gradle/caches:/home/gradle/.gradle/caches \
+              -w /home/gradle/project \
+              gradle:jdk17 \
+              ./gradlew clean test jacocoTestReport --no-daemon
+              
         - name: Run SonarQube analysis (Sonar Scanner container)
           env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
