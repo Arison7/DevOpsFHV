@@ -48,12 +48,5 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 	reports {
         xml.required = true
-		xml.outputLocation.set(layout.projectDirectory.file("coverage-reports/jacoco/test/jacocoTestReport.xml"))
-        html.outputLocation.set(layout.projectDirectory.dir("coverage-reports/jacoco/html"))
     }
-}
-
-jacoco {
-    toolVersion = "0.8.13"
-    reportsDirectory = layout.projectDirectory.dir("coverage-reports/jacoco")
 }

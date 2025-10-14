@@ -31,31 +31,6 @@ jobs:
             gradle:jdk17 \
             ./gradlew clean --no-daemon
 
-      - name: Build and test (Gradle container)
-        run: |
-          docker run --rm \
-            -u $(id -u):$(id -g) \
-            -v "${{ github.workspace }}":/home/gradle/project \
-            -v ~/.gradle/caches:/home/gradle/.gradle/caches \
-            -w /home/gradle/project \
-            gradle:jdk17 \
-            ./gradlew build jacocoTestReport --no-daemon
-
-      - name: Run SonarQube analysis (Sonar Scanner container)
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: |
-          docker run --rm \
-           -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
-           -e SONAR_TOKEN="${SONAR_TOKEN}" \
-           -v "${{ github.workspace }}":/usr/src \
-           sonarsource/sonar-scanner-cli \
-           -Dsonar.projectBaseDir=/usr/src \
-           -Dsonar.projectKey=Team12 \
-           -Dsonar.java.binaries=/usr/src/build/classes \
-           -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
-           -Dsonar.exclusions=**/.gradle/**,**/build/**
   start:
     runs-on: self-hosted
     needs: analyze
@@ -93,6 +68,30 @@ jobs:
             -p 8080:8080 \
             --network bridge \
             fhvdevops:latest
+
+  sonar:
+      runs-on: self-hosted
+      needs: start
+      name: Run SonarQube analysis
+      steps:
+        - uses: actions/checkout@v4
+        - name: Run SonarQube analysis (Sonar Scanner container)
+          env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          run: |
+            docker run --rm \
+            -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
+            -e SONAR_TOKEN="${SONAR_TOKEN}" \
+            -v "${{ github.workspace }}":/usr/src \
+            sonarsource/sonar-scanner-cli \
+            -Dsonar.projectBaseDir=/usr/src \
+            -Dsonar.projectKey=Team12 \
+            -Dsonar.projectName=Team12 \
+            -Dsonar.sources=src \
+            -Dsonar.java.binaries=/usr/src/build/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
+            -Dsonar.exclusions=**/.gradle/**,**/build/**
 
   test:
     runs-on: self-hosted
