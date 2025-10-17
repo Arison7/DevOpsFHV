@@ -110,7 +110,7 @@ jobs:
             -u $(id -u):$(id -g) -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
   serve-nginx:
     runs-on: self-hosted
-    needs: start
+    needs: sonar
     name: Serve static site with NGINX
     steps:
       - uses: actions/checkout@v4
