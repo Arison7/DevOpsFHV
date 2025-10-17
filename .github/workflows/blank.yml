@@ -34,10 +34,10 @@ jobs:
       - name: Run Documentation
         run: |
           docker run --rm \
-            -v "${{ github.workspace }}/docs":/docs \
-            -w /docs \
             python:3.11-slim \
-            bash -c "pip install -q mkdocs && mkdocs build -d /docs/build/site"
+            -v "${{ github.workspace }}/documentation":/documentation\
+            -w /documentation\
+            bash -c "pip install -q mkdocs && mkdocs build -d ./build/site"
 
   start:
     runs-on: self-hosted
