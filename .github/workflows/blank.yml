@@ -108,6 +108,19 @@ jobs:
           run: |
             docker run --rm \
             -u $(id -u):$(id -g) -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
+  serve_webpage:
+    runs-on: self-hosted
+    needs: start
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Serve static site with Nginx
+        run: |
+          docker run -d \
+            --name static-site \
+            -p 80:80 \
+            -v "${{ github.workspace }}/site":/usr/share/nginx/html:ro \
+            nginx:alpine
 
   test:
     runs-on: self-hosted
