@@ -35,10 +35,11 @@ jobs:
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
-            -v "${{ github.workspace }}/docs":/docs \
-            -w /docs \
+            -v "${{ github.workspace }}":/project \
+            -w /project \
             squidfunk/mkdocs-material \
-            build --site-dir /docs/build/site
+            build --config-file /project/documentation/docs/mkdocs.yml --site-dir /project/documentation/docs/build/site
+  
 
   start:
     runs-on: self-hosted
