@@ -1,0 +1,9 @@
+FROM nginx:alpine
+
+COPY ./site /usr/share/nginx/html
+
+# Expose port 80 to access the server
+EXPOSE 80
+
+# Start NGINX in the foreground
+CMD ["nginx", "-g", "daemon off;"]

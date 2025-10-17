@@ -85,7 +85,7 @@ jobs:
               -w /home/gradle/project \
               gradle:jdk17 \
               ./gradlew clean test jacocoTestReport --no-daemon
-              
+
         - name: Run SonarQube analysis (Sonar Scanner container)
           env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -108,19 +108,27 @@ jobs:
           run: |
             docker run --rm \
             -u $(id -u):$(id -g) -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
-  serve_webpage:
+  serve-nginx:
     runs-on: self-hosted
     needs: start
+    name: Serve static site with NGINX
     steps:
       - uses: actions/checkout@v4
 
-      - name: Serve static site with Nginx
+      - name: Build NGINX Docker image
+        run: docker build -t my-nginx-site -f Dockerfile-nginx .
+
+      - name: Stop existing NGINX container if running
+        run: |
+          docker stop nginx-site || true
+          docker rm nginx-site || true
+
+      - name: Run NGINX container
         run: |
           docker run -d \
-            --name static-site \
+            --name nginx-site \
             -p 80:80 \
-            -v "${{ github.workspace }}/site":/usr/share/nginx/html:ro \
-            nginx:alpine
+            my-nginx-site
 
   test:
     runs-on: self-hosted
