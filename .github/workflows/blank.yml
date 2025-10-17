@@ -34,7 +34,6 @@ jobs:
       - name: Run Documentation
         run: |
           docker run --rm \
-            -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}/docs":/docs \
             -w /docs \
             python:3.11-slim \
