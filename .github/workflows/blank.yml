@@ -33,7 +33,7 @@ jobs:
 
       - name: Run Documentation
         run: |
-          docker run --rm -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
+          docker run --rm -u $(id -u):$(id -g) -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
 
   start:
     runs-on: self-hosted
