@@ -1,15 +1,29 @@
-name: Build Spring Boot BootJar (Containerized)
+name: Spring Boot CI/CD Pipeline
 
 on:
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  GRADLE_IMAGE: gradle:jdk17
+  APP_NAME: fhvdevops
+  APP_PORT: 8080
+  REGISTRY: 10.0.40.193:5000
+  REGISTRY_IMAGE: 10.0.40.193:5000/fhvdevops:team12
+  API_ENDPOINT: http://10.0.40.192:8080/test
 
 jobs:
-  analyze:
-    name: Build and analyze
+  # Build and test the application
+  build:
+    name: Build and Test
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for SonarQube
 
       - name: Reset workspace permissions
         run: sudo chown -R $USER:$USER ${{ github.workspace }} || true
@@ -17,81 +31,78 @@ jobs:
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-      - name: Clean project (Gradle container)
+      - name: Clean and build bootJar
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
             -v ~/.gradle/caches:/home/gradle/.gradle/caches \
             -w /home/gradle/project \
-            gradle:jdk17 \
-            ./gradlew clean --no-daemon
+            ${{ env.GRADLE_IMAGE }} \
+            ./gradlew clean bootJar --no-daemon --info
 
-
-  start:
-    runs-on: self-hosted
-    needs: analyze
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build bootJar (Gradle container)
+      - name: Run tests with coverage
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
             -v "${{ github.workspace }}":/home/gradle/project \
             -v ~/.gradle/caches:/home/gradle/.gradle/caches \
             -w /home/gradle/project \
-            gradle:jdk17 \
-            ./gradlew bootJar --no-daemon
+            ${{ env.GRADLE_IMAGE }} \
+            ./gradlew test jacocoTestReport --no-daemon
 
-      - name: Build Docker image
-        run: docker build -t fhvdevops:latest -f Dockerfile-build .
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootjar
+          path: build/libs/*.jar
+          retention-days: 7
 
-  stop:
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: build/reports/tests/
+          retention-days: 7
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: build/reports/jacoco/
+          retention-days: 7
+
+  # Run SonarQube analysis
+  sonarqube:
+    name: SonarQube Analysis
     runs-on: self-hosted
-    needs: start
+    needs: build
     steps:
-      - run: docker stop fhvdevops || true
-      - run: docker rm fhvdevops || true
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  cleanup:
-    runs-on: self-hosted
-    needs: stop
-    steps:
-      - run: |
-          docker run -d \
-            --name fhvdevops \
-            --restart unless-stopped \
-            -p 8080:8080 \
-            --network bridge \
-            fhvdevops:latest
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: build/reports/jacoco/
 
-  sonar:
-      runs-on: self-hosted
-      needs: start
-      name: Run SonarQube analysis
-      steps:
-        - uses: actions/checkout@v4
-        - name: Run tests (with coverage)
-          run: |
-            docker run --rm \
-              -u $(id -u):$(id -g) \
-              -v "${{ github.workspace }}":/home/gradle/project \
-              -v ~/.gradle/caches:/home/gradle/.gradle/caches \
-              -w /home/gradle/project \
-              gradle:jdk17 \
-              ./gradlew clean test jacocoTestReport --no-daemon
-
-        - name: Run SonarQube analysis (Sonar Scanner container)
-          env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-            SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          run: |
-            docker run --rm \
+      - name: Run SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          docker run --rm \
             -e SONAR_HOST_URL="${SONAR_HOST_URL}" \
             -e SONAR_TOKEN="${SONAR_TOKEN}" \
             -v "${{ github.workspace }}":/usr/src \
@@ -99,56 +110,154 @@ jobs:
             -Dsonar.projectBaseDir=/usr/src \
             -Dsonar.projectKey=Team12 \
             -Dsonar.projectName=Team12 \
-            -Dsonar.sources=src \
+            -Dsonar.sources=src/main \
+            -Dsonar.tests=src/test \
             -Dsonar.java.binaries=/usr/src/build/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml \
             -Dsonar.exclusions=**/.gradle/**,**/build/**
 
-        - name: Run Documentation
-          run: |
-            docker run --rm \
-            -u $(id -u):$(id -g) -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
-  serve-nginx:
+  # Build documentation
+  documentation:
+    name: Build Documentation
     runs-on: self-hosted
-    needs: sonar
-    name: Serve static site with NGINX
+    needs: build
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Build NGINX Docker image
-        run: docker build -t my-nginx-site -f Dockerfile-nginx .
+      - name: Build MkDocs documentation
+        run: |
+          docker run --rm \
+            -u $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/docs \
+            squidfunk/mkdocs-material build
 
-      - name: Stop existing NGINX container if running
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: site/
+          retention-days: 30
+
+  # Build and push Docker images
+  docker:
+    name: Build and Push Docker Images
+    runs-on: self-hosted
+    needs: [build, sonarqube]
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bootjar
+          path: build/libs/
+
+      - name: Build application Docker image
+        run: |
+          docker build -t ${{ env.APP_NAME }}:latest -f Dockerfile-build .
+          docker tag ${{ env.APP_NAME }}:latest ${{ env.REGISTRY_IMAGE }}
+
+      - name: Build NGINX documentation image
+        run: |
+          docker build -t ${{ env.APP_NAME }}-nginx:latest -f Dockerfile-nginx .
+
+      - name: Push to registry
+        run: docker push ${{ env.REGISTRY_IMAGE }}
+
+  # Deploy application
+  deploy:
+    name: Deploy Application
+    runs-on: self-hosted
+    needs: docker
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Stop existing application container
+        run: |
+          docker stop ${{ env.APP_NAME }} || true
+          docker rm ${{ env.APP_NAME }} || true
+
+      - name: Start application container
+        run: |
+          docker run -d \
+            --name ${{ env.APP_NAME }} \
+            --restart unless-stopped \
+            -p ${{ env.APP_PORT }}:${{ env.APP_PORT }} \
+            --network bridge \
+            ${{ env.APP_NAME }}:latest
+
+      - name: Wait for application startup
+        run: |
+          echo "Waiting for application to start..."
+          sleep 10
+
+  # Deploy documentation
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: self-hosted
+    needs: documentation
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Stop existing NGINX container
         run: |
           docker stop nginx-site || true
           docker rm nginx-site || true
 
-      - name: Run NGINX container
+      - name: Start NGINX container
         run: |
           docker run -d \
             --name nginx-site \
+            --restart unless-stopped \
             -p 80:80 \
-            my-nginx-site
+            ${{ env.APP_NAME }}-nginx:latest
 
-  test:
+  # Health check
+  health-check:
+    name: Health Check
     runs-on: self-hosted
-    needs: cleanup
+    needs: deploy
+    if: github.ref == 'refs/heads/master'
     steps:
-      - run: |
-          echo 'Checking API endpoint...'
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://10.0.40.192:8080/test)
-          if [ "$response" -eq 200 ]; then
-            echo 'API returned success'
-          else
-            echo "API returned status $response"
-            exit 1
-          fi
+      - name: Test API endpoint
+        run: |
+          echo 'Checking API endpoint: ${{ env.API_ENDPOINT }}'
+          
+          # Retry logic for health check
+          max_attempts=5
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_ENDPOINT }})
+          
+            if [ "$response" -eq 200 ]; then
+              echo "✓ API health check passed (HTTP $response)"
+              exit 0
+            fi
+          
+            echo "✗ API returned status $response"
+          
+            if [ $attempt -lt $max_attempts ]; then
+              echo "Retrying in 5 seconds..."
+              sleep 5
+            fi
+          
+            attempt=$((attempt + 1))
+          done
+          
+          echo "✗ Health check failed after $max_attempts attempts"
+          exit 1
 
-  publish:
+  # Cleanup old images
+  cleanup:
+    name: Cleanup Old Images
     runs-on: self-hosted
-    needs: test
-    if: success()
+    needs: health-check
+    if: always() && github.ref == 'refs/heads/master'
     steps:
-      - run: |
-          docker tag fhvdevops:latest 10.0.40.193:5000/fhvdevops:team12
-          docker push 10.0.40.193:5000/fhvdevops:team12
+      - name: Remove dangling images
+        run: |
+          docker image prune -f
+          echo "Cleanup completed"
