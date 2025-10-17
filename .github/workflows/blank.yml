@@ -38,7 +38,7 @@ jobs:
             -v "${{ github.workspace }}":/project \
             -w /project \
             squidfunk/mkdocs-material \
-            build --config-file /project/documentation/mkdocs.yml --site-dir /project/documentation/docs/build/site
+            build --config-file /project/documentation/mkdocs.yml --site-dir /project/build/site
   
 
   start:
