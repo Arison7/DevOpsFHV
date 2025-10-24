@@ -111,8 +111,8 @@ jobs:
         - name: Convert to pdf 
           run: |
             docker run --rm \
-            --volume "$(pwd)/docs:/data" \
-            -w /data \ 
+             --volume "$(pwd)/docs:/data" \
+             -w /data \ 
              --user $(id -u):$(id -g) \
              pandoc/latex README.md --pdf-engine=xelatex -o docs.pdf
 
