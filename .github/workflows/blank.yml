@@ -108,6 +108,14 @@ jobs:
           run: |
             docker run --rm \
             -u $(id -u):$(id -g) -v ${{ github.workspace }}:/docs squidfunk/mkdocs-material build
+        - name: Convert to pdf 
+          run: |
+            docker run --rm \
+            --volume "$(pwd)/docs:/data" \
+            -w /data \ 
+             --user $(id -u):$(id -g) \
+             pandoc/latex README.md --pdf-engine=xelatex -o docs.pdf
+
   serve-nginx:
     runs-on: self-hosted
     needs: sonar
