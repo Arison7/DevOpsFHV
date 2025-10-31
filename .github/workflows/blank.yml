@@ -49,14 +49,14 @@ jobs:
             ./gradlew bootJar --no-daemon
 
       - name: Build Docker image
-        run: docker build -t fhvdevops:latest -f Dockerfile-build .
+        run: docker build -t fhvdevopsteam12:latest -f Dockerfile-build .
 
   stop:
     runs-on: self-hosted
     needs: build
     steps:
-      - run: docker stop fhvdevops || true
-      - run: docker rm fhvdevops || true
+      - run: docker stop fhvdevopsteam12 || true
+      - run: docker rm fhvdevopsteam12 || true
 
   start:
     runs-on: self-hosted
@@ -64,11 +64,11 @@ jobs:
     steps:
       - run: |
           docker run -d \
-            --name fhvdevops \
+            --name fhvdevopsteam12 \
             --restart unless-stopped \
             -p 8080:8080 \
             --network bridge \
-            fhvdevops:latest
+            fhvdevopsteam12:latest
 
   sonar:
       runs-on: self-hosted
@@ -124,19 +124,24 @@ jobs:
     steps:
 
       - name: Build NGINX Docker image
-        run: docker build -t my-nginx-site -f Dockerfile-nginx .
+        run: |
+          docker build -t docs-site-team12 -f Dockerfile-nginx .
+          docker tag docs-site-team12 10.0.40.193:5000/docs-site-team12:team12
 
       - name: Stop existing NGINX container if running
         run: |
-          docker stop nginx-site || true
-          docker rm nginx-site || true
+          docker stop docs-site-team12 || true
+          docker rm docs-site-team12 || true
 
       - name: Run NGINX container
         run: |
           docker run -d \
-            --name nginx-site \
+            --name docs-site-team12 \
             -p 80:80 \
-            my-nginx-site
+            docs-site-team12
+
+      - name: Push to registry
+        run: docker push 10.0.40.193:5000/docs-site-team12:team12
 
   test:
     runs-on: self-hosted
@@ -158,5 +163,39 @@ jobs:
     if: success()
     steps:
       - run: |
-          docker tag fhvdevops:latest 10.0.40.193:5000/fhvdevops:team12
-          docker push 10.0.40.193:5000/fhvdevops:team12
+          docker tag fhvdevopsteam12:latest 10.0.40.193:5000/fhvdevopsteam12:team12
+          docker push 10.0.40.193:5000/fhvdevopsteam12:team12
+
+  deploy:
+    name: Deploy to Production via SSH
+    runs-on: self-hosted
+    needs: publish
+    steps:
+
+      - name: Deploy on production server
+        run: |
+          ssh -i /home/svcgithub/actions_keys/team12_key.pem svcgithub@10.0.40.194 << 'EOF'
+            docker stop fhvdevopsteam12 || true
+            docker rm fhvdevopsteam12 || true
+            docker stop docs-site-team12 || true
+            docker rm docs-site-team12 || true
+
+            docker rmi 10.0.40.193:5000/fhvdevopsteam12:team12 || true
+            docker rmi 10.0.40.193:5000/docs-site-team12:team12
+
+            docker pull 10.0.40.193:5000/fhvdevopsteam12:team12
+            docker pull 10.0.40.193:5000/docs-site-team12:team12
+
+            docker run -d \
+              --name fhvdevopsteam12 \
+              --restart unless-stopped \
+              -p 1921:8080 \
+              10.0.40.193:5000/fhvdevopsteam12:team12
+
+            echo "Starting documentation container..."
+            docker run -d \
+              --name docs-site-team12 \
+              --restart unless-stopped \
+              -p 1922:80 \
+              10.0.40.193:5000/docs-site-team12:team12
+          EOF
