@@ -171,10 +171,18 @@ jobs:
     runs-on: self-hosted
     needs: publish
     steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.TEAM12_KEY }}" > ~/.ssh/team12_key.pem
+          chmod 600 ~/.ssh/team12_key.pem
+
+      - name: Add production server to known_hosts
+        run: ssh-keyscan -H 10.0.40.194 >> ~/.ssh/known_hosts
 
       - name: Deploy on production server
         run: |
-          ssh -i /home/svcgithub/actions_keys/team12_key.pem svcgithub@10.0.40.194 << 'EOF'
+          ssh -i ~/.ssh/team12_key.pem -o UserKnownHostsFile=~/.ssh/known_hosts svcgithub@10.0.40.194 << 'EOF'
             docker stop fhvdevopsteam12 || true
             docker rm fhvdevopsteam12 || true
             docker stop docs-site-team12 || true
