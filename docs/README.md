@@ -2,10 +2,30 @@
 
 # Team Members 
 
-@Arison7
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/arison7">
+        <img src="https://avatars.githubusercontent.com/arison7" width="80px;" alt="username1"/><br />
+        <sub><b>@arison7</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Suprymas">
+        <img src="https://avatars.githubusercontent.com/Suprymas" width="80px;" alt="username2"/><br />
+        <sub><b>@Suprymas</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/FernandusJs">
+        <img src="https://avatars.githubusercontent.com/FernandusJs" width="80px;" alt="username3"/><br />
+        <sub><b>@FernandusJs</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
-# Pipelines Documentation
-[[Pipeline]](../.github/workflows/blank.yml)
+# [Pipeline](../.github/workflows/blank.yml) Documentation
 
 ### Step 1: Set up
 
