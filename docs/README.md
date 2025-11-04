@@ -1,4 +1,8 @@
-# TEAM12
+# TEAM12  
+![Gradle](https://img.shields.io/badge/Build-Gradle-02303A?logo=gradle&logoColor=white)
+![Docker](https://img.shields.io/badge/Container-Docker-2496ED?logo=docker&logoColor=white)
+
+
 
 # Team Members 
 
