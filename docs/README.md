@@ -1,6 +1,8 @@
-# This is a read me file
+# TEAM12
 
 - you can read it 
 
 
-## Find the pdf [here](http://10.0.40.192/docs.pdf)
+
+## Documentation
+Find the pdf [here](http://10.0.40.192/docs.pdf)
