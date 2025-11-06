@@ -48,6 +48,17 @@ jobs:
             gradle:jdk17 \
             ./gradlew bootJar --no-daemon
 
+      - name: Run Tests (gradle container)
+        run: |
+          docker run --rm \
+            -u $(id -u):$(id -g) \
+            -v "${{ github.workspace }}":/home/gradle/project \
+            -v ~/.gradle/caches:/home/gradle/.gradle/caches \
+            -w /home/gradle/project \
+            gradle:jdk17 \
+            ./gradlew test --no-daemon
+
+
       - name: Build Docker image
         run: docker build -t fhvdevopsteam12:latest -f Dockerfile-build .
 
