@@ -1,4 +1,4 @@
-package fhv.devops.international1.Test;
+package fhv.devops.international1.test;
 
 import fhv.devops.international1.Controller.TestRestController;
 import org.junit.jupiter.api.Test;
